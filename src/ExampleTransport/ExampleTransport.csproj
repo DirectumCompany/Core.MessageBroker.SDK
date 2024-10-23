@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>ExampleTransport</AssemblyName>
+    <RootNamespace>ExampleTransport</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <CodeAnalysisRuleSet>..\StyleCop.ruleset</CodeAnalysisRuleSet>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeInPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <!-- Описание пакета -->
+  <PropertyGroup>
+    <Authors>Directum Ltd.</Authors>
+    <Description>Example adapter transport plugin for message broker.</Description>
+    <Copyright>2024 © Directum Ltd.</Copyright>
+  </PropertyGroup>
+
+  <!-- Копируем в пакет документацию, символы отладки и dll зависимости -->
+  <Target Name="IncludeInPackage">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).deps.json" PackagePath="lib\$(TargetFramework)" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).pdb" PackagePath="lib\$(TargetFramework)" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\*.dll" PackagePath="lib\$(TargetFramework)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Внешние библиотеки -->
+  <ItemGroup>
+    <PackageReference Include="Core.MessageBroker.Transport" Version="*" />
+    <PackageReference Include="FluentValidation" Version="11.9.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="6.0.32" />
+    <PackageReference Include="Microsoft.Net.Http.Headers" Version="2.1.14" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Prise.Plugin" Version="6.0.0" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="6.0.10" />
+  </ItemGroup>
+
+  <!-- Подключенные проекты -->
+  <ItemGroup>
+    <!--<ProjectReference Include="project.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>-->
+  </ItemGroup>
+
+  <!-- Транзитивные зависимости из подключенных проектов для указания в nuspec пакета -->
+  <ItemGroup>
+    <!--<PackageReference Include="Package" Version="0.0.0" />-->
+  </ItemGroup>
+
+</Project>
