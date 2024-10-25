@@ -28,6 +28,6 @@ namespace ExampleTransport.Plugin
     public int? GetTrySendCount() => _messageTransportProxy.GetTrySendCount();
 
     /// <inheritdoc/>
-    public async Task<double> HealthCheck(HealthCheckErrorMessage errorMessage = null) => await _messageTransportProxy.HealthCheck(errorMessage);
+    public async Task<HealthCheckResult> HealthCheck() => await _messageTransportProxy.HealthCheck();
   }
 }
