@@ -154,9 +154,9 @@ namespace ExampleTransport
     public int? GetTrySendCount() => default;
 
     /// <inheritdoc/>
-    public async Task<double> HealthCheck(HealthCheckErrorMessage errorMessage = null)
+    public async Task<HealthCheckResult> HealthCheck()
     {
-      return await Task.FromResult(1.0);
+      return await Task.FromResult(HealthCheckResult.Healthy());
     }
 
     /// <summary>
