@@ -8,8 +8,13 @@ using Prise.Plugin;
 namespace ExampleTransport.Plugin
 {
   /// <summary>
-  /// Загрузчик транспортного плагина.
+  /// Загрузчик транспортного плагина, настраивает и загружает указанные зависимости.
   /// </summary>
+  /// <remarks>
+  /// * Атрибут <see cref="PluginBootstrapperAttribute"/> связывает загрузчик с плагином, который необходимо инициализировать;
+  /// * Зависимости плагина обозначаются полями с атрибутом <see cref="BootstrapperServiceAttribute"/>;
+  /// * Прокси в зависимостях необходимы для работы с сервисами хост-приложения в плагине.
+  /// </remarks>
   [PluginBootstrapper(PluginType = typeof(ExampleTransportPlugin))]
   public class ExampleTransportPluginBootstrapper : IPluginBootstrapper
   {

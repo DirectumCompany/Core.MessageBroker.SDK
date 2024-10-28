@@ -66,7 +66,7 @@ namespace ExampleTransport
     private readonly IHttpClientFactory _httpClientFactory;
 
     /// <summary>
-    /// Инициализирует класс <see cref="ExampleTransportProxy"/>.
+    /// Инициализирует транспортный посредник.
     /// </summary>
     /// <param name="configurationService">Сервис получения конфигурации плагина.</param>
     /// <param name="phoneNumberUtilities">Утилиты для номера телефона.</param>
@@ -101,7 +101,10 @@ namespace ExampleTransport
       _messagesPerSecond = _proxyOptions.MessagesPerSecond;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Передаёт сообщение.
+    /// </summary>
+    /// <param name="message">Передаваемое сообщение.</param>
     public async Task TransmitAsync(Message message)
     {
       var requestQuota = ChooseQuotaPriority(message.Priority);
@@ -147,13 +150,38 @@ namespace ExampleTransport
       }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Возвращает количество сообщений в секунду, которые позволяет отправлять транспорт.
+    /// </summary>
+    /// <returns>
+    /// Количество сообщений в секунду, которые позволяет отправлять транспорт.
+    /// </returns>
+    /// <remarks>
+    /// Значение <c>0</c> означает "без ограничений".
+    /// </remarks>
     public int GetMessagesPerSecond() => _messagesPerSecond;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Возвращает количество попыток отправить сообщение.
+    /// </summary>
+    /// <returns>
+    /// Количество попыток отправить сообщение.
+    /// </returns>
+    /// <remarks>
+    /// Значение <c>null</c> означает "без ограничений"
+    /// </remarks>
     public int? GetTrySendCount() => default;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Выполняет проверку здоровья.
+    /// </summary>
+    /// <returns>
+    /// Результат проверки здоровья.
+    /// </returns>
+    /// <remarks>
+    /// Метод вызывается в общей проверки готовности хоста (/ready) и позволяет быстро определить
+    /// все ли в порядке с транспортным посредником.
+    /// </remarks>
     public async Task<HealthCheckResult> HealthCheck()
     {
       return await Task.FromResult(HealthCheckResult.Healthy());

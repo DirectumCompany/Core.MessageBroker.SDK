@@ -9,7 +9,7 @@ namespace ExampleTransport
   internal class ConfigurationValidator : AbstractValidator<Configuration>
   {
     /// <summary>
-    /// Конструктор.
+    /// Инициализирует валидатор настроек.
     /// </summary>
     public ConfigurationValidator()
     {
