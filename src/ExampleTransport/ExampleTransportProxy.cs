@@ -80,7 +80,7 @@ namespace ExampleTransport
       ISystemClock systemClock,
       IHttpClientFactory httpClientFactory = null)
     {
-      _proxyOptions = configurationService.Get<Configuration>(_pluginType);
+      _proxyOptions = configurationService.Get<Configuration>();
 
       SettingsValidator<Configuration>.Validate(
         _proxyOptions,
