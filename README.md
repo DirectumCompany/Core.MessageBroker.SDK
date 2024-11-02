@@ -10,8 +10,8 @@ ExampleTransport - пример плагина
 
 При разработке плагина используйте пример плагина из комплекта поставки.
 
-Необходимо придумать корректное и осмысленное название для плагина и при реализации по примеру ExampleTranport во всех местах проекта необходимо изменить наименование 'Example' на придуманное имя.
-В качестве примера можно привести гипотетическую компанию Contoroso. В этом случае упоминания ExampleTransport, ExampleTransportProxy и т.д., будут заменены на ContorosoTransport, ContorosoTransportProxy и т.д. во всём проекте, включая настройки в appsettings и docker-compose.
+Необходимо придумать корректное и осмысленное название для плагина и при реализации по примеру ExampleTransport во всех местах проекта необходимо изменить наименование 'Example' на придуманное имя.
+В качестве примера можно привести гипотетическую компанию Contoso. В этом случае упоминания ExampleTransport, ExampleTransportProxy и т.д., будут заменены на ContosoTransport, ContosoTransportProxy и т.д. во всём проекте, включая настройки в appsettings.json и docker-compose.
 
 Состав примера плагина:
 
@@ -28,45 +28,64 @@ ExampleTransport - пример плагина
 1. Для проверки корректности настроек, необходимо добавить валидатор, который проверяет как базовые, так и дополнительные настройки, необходимые для конкретного транспортного посредника.
 1. В проект необходимо добавить транспортный плагин и загрузчик, по аналогии с файлами Plugin из примера.
 
-Важно корректно настроить файл проекта плагина .csproj, для этого необходимо добавить:
+Важно корректно настроить файл проекта плагина `*.csproj`, для этого необходимо добавить:
+
 * блок с описанием пакета;
 * блок c копированием в пакет документации, символов отладки и dll зависимостей;
 * блок с внешними библиотеками, где необходимо указать зависимость от nuget-пакета транспорта `Core.MessageBroker.Transport.*.nupkg`, идущего в комплекте дистрибутива MessageBroker: `<PackageReference Include="Core.MessageBroker.Transport" Version="*" />`
 * блок с основными настройками:
-   +   `<TargetFramework>netstandard2.1</TargetFramework>` заменить на используемый TargetFramework; 
-   +   `<AssemblyName>ExampleTransport</AssemblyName>` заменить на наименование транспортного посредника;
-   +   `<RootNamespace>ExampleTransport</RootNamespace>`;
-   +   `<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>`;
-   +   `<GenerateDocumentationFile>true</GenerateDocumentationFile>`;
-   +   `<GeneratePackageOnBuild>true</GeneratePackageOnBuild>`;
-   +   `<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeInPackage</TargetsForTfmSpecificContentInPackage>`.
-   
+  * `<TargetFramework>netstandard2.1</TargetFramework>` заменить на используемый TargetFramework;
+  * `<AssemblyName>ExampleTransport</AssemblyName>` заменить на наименование транспортного посредника;
+  * `<RootNamespace>ExampleTransport</RootNamespace>`;
+  * `<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>`;
+  * `<GenerateDocumentationFile>true</GenerateDocumentationFile>`;
+  * `<GeneratePackageOnBuild>true</GeneratePackageOnBuild>`;
+  * `<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeInPackage</TargetsForTfmSpecificContentInPackage>`.
+
 ### Содержание модели сообщения Message
 
-Message: 
+Message:
 
-* string **Id** - идентификатор сообщения;
-* string **Title** - заголовок сообщения;
-* string **Content** - содержимое сообщения;
-* MessagePriority(enum) **Priority** - приоритет сообщения;
-  + MessagePriority:
-    - Low = -1 - низкий приоритет;
-    - Normal = 0 - нормальный приоритет;
-    - High = 1 - высокий приоритет;
-* DateTimeOffset **BestBefore** - срок действительности сообщения. Если сообщение не удалось отправить за указанное время, оно помечается как сообщение с истёкшим скором действия и не будет отправлено;
-* Dictionary<string, string> **Properties** - свойства сообщения;
-* MessageIdentity **Identity** - получатель сообщения;
-  + MessageIdentity:
-    - string **CredentialType** - тип реквизита удостоверения получателя. В стандартной реализации заполняется значениями ClaimTypes `HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/MOBILEPHONE` и `HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/EMAILADDRESS` из пространства `System.Security.Claims`, в собственной реализации можно использовать другие ClaimTypes;
-    - string **CredentialValue** - значение реквизита удостоверения получателя;
-      * Для реквизитов с типом `HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/MOBILEPHONE` выполняется нормализация значения. Так номера телефонов, которые начинаются на '7' или '8' длиной 11 цифр, считаются   валидными. В остальных случаях первым символом всегда должен быть '+' и удовлетворять международному формату;
-* List<DeviceInfo> **DevicesInfo** - информация об устройстве;
-   + DeviceInfo:
-     - string **DeviceId** - ид устройства;
-     - Dictionary<string, string> **TokensInfo** - информация о токенах.
-       * Ключом словаря является название системы отправки пуш-уведомлений. Возможные значения: 'FCM', 'RuStore';
-       * Значением словаря являются пользовательские токены устройств. 
-   
+* `string` **Id** - идентификатор сообщения;
+* `string` **Title** - заголовок сообщения;
+* `string` **Content** - содержимое сообщения;
+* `MessagePriority` **Priority** - приоритет сообщения:
+  * `enum MessagePriority`:
+    * `Low = -1` - низкий приоритет;
+    * `Normal = 0` - нормальный приоритет;
+    * `High = 1` - высокий приоритет.
+* `MessageDeliveryMethod` **DeliveryMethod** - метод доставки:
+  * `enum MessageDeliveryMethod`:
+    * `Push = 0` - push-метод, сообщения отправляются брокером внешним адресатам, например, в сервисы отправки СМС;
+    * `Pull = 1` - pull-метод, сообщения забираются адресатами самостоятельно у брокера.
+* `string` **DeliveryProxy** - посредник доставки. Возможные значения: 'Sms', 'Smtp', 'Viber'. Если нужны push-уведомления, то они пока что жёстко привязаны к 'Sms' (см. документацию установки сервиса);
+* `DateTimeOffset` **BestBefore** - срок действительности сообщения. Если сообщение не удалось отправить за указанное время, оно помечается как сообщение с истёкшим скором действия и не будет отправлено;
+* `Dictionary<string, string>` **Properties** - свойства сообщения. Параметр используется в push-уведомлениях. Также поле может использоваться для передачи специфических параметров сообщения;
+* `List<string>` **Tags** - тэги сообщения. Параметр пока не используется;
+* `MessageIdentity` **Identity** - получатель сообщения:
+  * `class MessageIdentity`:
+    * `string` **CredentialType** - тип реквизита удостоверения получателя. В стандартной реализации заполняется значениями ClaimTypes `HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/MOBILEPHONE` и `HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/EMAILADDRESS` из пространства `System.Security.Claims`. В собственной реализации можно использовать другие значения;
+    * `string` **CredentialValue** - значение реквизита удостоверения получателя:
+      * для реквизитов с типом `HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/MOBILEPHONE` выполняется нормализация значения. Так номера телефонов, которые начинаются на '7' или '8' длиной 11 цифр, считаются валидными. В остальных случаях первым символом всегда должен быть '+' и удовлетворять международному формату.
+* `List<MessageAction>` **Actions** - действия. Параметр пока не используется:
+  * `class MessageAction`:
+    * `string` **Name** - наименование действия;
+    * `string` **Title** - заголовок действия;
+    * `Dictionary<string, string>` **Parameters** - параметры действия:
+      * ключом словаря является название параметра действия;
+      * значением словаря является значение параметра действия.
+* `List<MessageAttachment>` **Attachments** - вложения. Параметр пока не используется:
+  * `class MessageAttachment`:
+    * `string` **Title** - заголовок вложения;
+    * `string` **Url** - ссылка на вложение.
+* `string` **OperationId** - идентификатор внешней операции. Параметр используется для наложения ограничений на повторную отправку кодов в рамках одной операции подтверждения некоего действия;
+* `List<DeviceInfo>` **DevicesInfo** - информация об устройствах пользователя. Параметр используется для отправки push-уведомлений:
+  * `class DeviceInfo`:
+    * `string` **DeviceId** - идентификатор устройства;
+    * `Dictionary<string, string>` **TokensInfo** - информация о токенах:
+      * ключом словаря является название системы отправки push-уведомлений. Возможные значения: 'FCM', 'RuStore';
+      * значением словаря являются пользовательские токены устройств.
+
 ### Исключения, которые можно использовать в плагине
 
 * **IncorrectMessageDataException** - исключение, используемое при некорректных данных в сообщении;
@@ -84,13 +103,13 @@ Message:
 
 ## Подключение плагина к MessageBroker
 
-Для подключения плагина предварительно соберите реализованный проект в nuget-пакет. Далее действуйте, исходя из используемой ОС
+Для подключения плагина предварительно соберите реализованный проект в nuget-пакет. Далее действуйте, исходя из используемой ОС.
 
 ### Windows
 
-1. В папке с планировщиком заданий CoreMessageBroker\Scheduler в конфигурационном файле appsettings.json заполните параметры.
-1. Собранный в результате сборки, nupkg плагина скопировать в директорию указанную в настройках, по умолчанию это \Plugins проекта CoreMessageBroker.Scheduler. 
-1. Укажите название плагина транспортного посредника в настройке `*DeliveryProxy`, где вместо `*` нужно указать тип сообщений, отправка которых реализуется в плагине. Пример для SmsDeliveryProxy:
+1. В папке с планировщиком заданий `CoreMessageBroker\Scheduler` в конфигурационном файле `appsettings.json` заполните параметры.
+1. Собранный в результате сборки, nupkg плагина скопировать в директорию указанную в настройках, по умолчанию это `./Plugins` проекта `CoreMessageBroker.Scheduler`.
+1. Укажите название плагина транспортного посредника в настройке `*DeliveryProxy`, где вместо `*` нужно указать тип сообщений, отправка которых реализуется в плагине. Пример для `SmsDeliveryProxy`:
 
 ```json
   "Transport": {
@@ -110,23 +129,24 @@ Message:
 
 1. Укажите название плагина транспортного посредника в настройке `Transport__*DeliveryProxy`, где `*` нужно указать тип сообщений, отправка которых реализуется в плагине.
 1. Добавьте собранный nupkg с плагином в образ:
-  * примонтируйте папку, в которой находится плагин;
-  * переопределите `entrypoint` для копирования плагинов из volume в основную директорию.
-   
-      ```yml
-      message-broker-scheduler:
-        image: registry.directum.ru/hrpro/directum.message.scheduler:*.*.*.*
-        entrypoint: "sh -c 'cp /Plugins/*nupkg /app/Plugins && dotnet Core.MessageBroker.Scheduler.dll'"
-        environment:
-          ...
-          Transport__*DeliveryProxy: "ExampleTransportPlugin"
 
-          Transport__Proxies__ExampleTransportPlugin__Setting1: ""
-          Transport__Proxies__ExampleTransportPlugin__Setting2: ""
-          Transport__Proxies__ExampleTransportPlugin__Setting3: ""
-          ...
-        volumes:
-          - ./Plugins:/Plugins
-        ports:
-          - "*:*"
-      ```
+* примонтируйте папку, в которой находится плагин;
+* переопределите `entrypoint` для копирования плагинов из `volume` в основную директорию.
+
+  ```yml
+  message-broker-scheduler:
+    image: registry.directum.ru/hrpro/directum.message.scheduler:*.*.*.*
+    entrypoint: "sh -c 'cp /Plugins/*nupkg /app/Plugins && dotnet Core.MessageBroker.Scheduler.dll'"
+    environment:
+      ...
+      Transport__*DeliveryProxy: "ExampleTransportPlugin"
+
+      Transport__Proxies__ExampleTransportPlugin__Setting1: ""
+      Transport__Proxies__ExampleTransportPlugin__Setting2: ""
+      Transport__Proxies__ExampleTransportPlugin__Setting3: ""
+      ...
+    volumes:
+      - ./Plugins:/Plugins
+    ports:
+      - "*:*"
+  ```
