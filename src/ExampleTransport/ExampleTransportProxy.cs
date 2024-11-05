@@ -31,11 +31,6 @@ namespace ExampleTransport
     private readonly string _pluginType = nameof(Plugin.ExampleTransportPlugin);
 
     /// <summary>
-    /// Количество сообщений в секунду, которые позволяет отправлять транспорт.
-    /// </summary>
-    private readonly int _messagesPerSecond;
-
-    /// <summary>
     /// Адрес подключения к сервису отправки сообщений.
     /// </summary>
     private readonly Uri _endpoint;
@@ -98,7 +93,6 @@ namespace ExampleTransport
         _proxyOptions.Path).Uri;
 
       _httpClientFactory = httpClientFactory;
-      _messagesPerSecond = _proxyOptions.MessagesPerSecond;
     }
 
     /// <summary>
@@ -159,7 +153,7 @@ namespace ExampleTransport
     /// <remarks>
     /// Значение <c>0</c> означает "без ограничений".
     /// </remarks>
-    public int GetMessagesPerSecond() => _messagesPerSecond;
+    public int GetMessagesPerSecond() => _proxyOptions.MessagesPerSecond;
 
     /// <summary>
     /// Возвращает количество попыток отправить сообщение.
