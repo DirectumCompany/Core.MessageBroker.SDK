@@ -16,6 +16,7 @@ namespace ExampleTransport
   /// * Username - имя пользователя;
   /// * Password - пароль пользователя;
   /// * MessagesPerSecond - количество сообщений в секунду, которые позволяет отправлять транспорт. 0, если неограниченно.
+  /// * MaxTransmitRetryCount - количество попыток отправить сообщение. <c>null</c>, если неограниченно.
   /// </remarks>
   internal class Configuration : ConfigurationBase
   {

@@ -29,7 +29,7 @@ namespace ExampleTransport.Plugin
     /// Передаёт сообщение.
     /// </summary>
     /// <param name="message">Передаваемое сообщение.</param>
-    public async Task TransmitAsync(Message message) => await _messageTransportProxy.TransmitAsync(message);
+    public async Task<TransmitResult> TransmitAsync(Message message) => await _messageTransportProxy.TransmitAsync(message);
 
     /// <summary>
     /// Возвращает количество сообщений в секунду, которые позволяет отправлять транспорт.
