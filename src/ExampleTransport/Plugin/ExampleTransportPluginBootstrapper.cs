@@ -37,6 +37,12 @@ namespace ExampleTransport.Plugin
     private readonly ISystemClock _systemClock;
 
     /// <summary>
+    /// Утилиты для работы с приоритетами.
+    /// </summary>
+    [BootstrapperService(ServiceType = typeof(IPrioritiesUtility), ProxyType = typeof(PrioritiesUtilityProxy))]
+    private readonly IPrioritiesUtility _prioritiesUtility;
+
+    /// <summary>
     /// Фабрика HTTP клиентов.
     /// </summary>
     [BootstrapperService(ServiceType = typeof(IHttpClientFactory), ProxyType = typeof(HttpClientFactoryProxy))]
@@ -53,6 +59,7 @@ namespace ExampleTransport.Plugin
         .AddSingleton(_configurationService)
         .AddSingleton(_phoneNumberUtilities)
         .AddSingleton(_systemClock)
+        .AddSingleton(_prioritiesUtility)
         .AddSingleton(_httpClientFactory)
         .AddTransient<IMessageTransportProxy, ExampleTransportProxy>();
     }

@@ -1,9 +1,9 @@
 using System;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Core.MessageBroker.ConfigurationValidation;
 using Core.MessageBroker.Transport;
@@ -14,14 +14,13 @@ using Core.MessageBroker.Transport.Utils;
 using ExampleTransport.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
 using Polly;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace ExampleTransport
 {
   /// <summary>
-  /// Транспортный посредник Example для отправки сообщений.
+  /// Прокси-сервис провайдера отправки сообщений.
   /// </summary>
   public class ExampleTransportProxy : IMessageTransportProxy
   {
@@ -61,7 +60,7 @@ namespace ExampleTransport
     private readonly IHttpClientFactory _httpClientFactory;
 
     /// <summary>
-    /// Инициализирует транспортный посредник.
+    /// Инициализирует прокси-сервис провайдера отправки сообщений.
     /// </summary>
     /// <param name="configurationService">Сервис получения конфигурации плагина.</param>
     /// <param name="phoneNumberUtilities">Утилиты для номера телефона.</param>
@@ -99,48 +98,46 @@ namespace ExampleTransport
     /// Передаёт сообщение.
     /// </summary>
     /// <param name="message">Передаваемое сообщение.</param>
-    public async Task TransmitAsync(Message message)
+    public async Task<TransmitResult> TransmitAsync(Message message)
     {
-      var requestQuota = ChooseQuotaPriority(message.Priority);
-
-      CheckIdentityCredential(message);
-
-      var messageText = GetMessageText(message);
-      var phoneNumber = _phoneNumberUtilities.Normalize(message.Identity.CredentialValue);
-
       try
       {
+        CheckIdentityCredential(message);
+        var messageText = GetMessageText(message);
+        var phoneNumber = _phoneNumberUtilities.Normalize(message.Identity.CredentialValue);
         using var request = PrepareHttpRequestMessage(messageText, phoneNumber);
         using var client = _httpClientFactory?.CreateClient() ?? new HttpClient();
-        using var response = await client.SendAsync(request);
-        using var stream = await response.Content.ReadAsStreamAsync();
-        using var reader = new StreamReader(stream);
-        var responseText = await reader.ReadToEndAsync();
+        using var httpResponse = await client.SendAsync(request);
+        await HandleResponseAsync(message, httpResponse);
 
-        if (response.StatusCode != HttpStatusCode.OK)
+        return new TransmitResult()
         {
-          var settings = new JsonSerializerSettings { Error = (se, ev) => { ev.ErrorContext.Handled = true; } };
-          var errorInfo = JsonConvert.DeserializeObject<ErrorInfo>(responseText, settings) ?? new ErrorInfo();
-
-          throw errorInfo.Code switch
-          {
-            _ => new MessageDeliveryException(
-              $"Ошибка доставки сообщения: {_pluginType} {errorInfo.Code} {errorInfo.Message}."),
-          };
-        }
+          IsSuccess = true,
+        };
       }
-      catch (Exception ex) when
-        (ex is IncorrectMessageDataException ||
-         ex is TransportAuthorizeException ||
-         ex is PriorityLimitException ||
-         ex is MessageDeliveryException)
+      catch (PluginAppException ex)
       {
-        throw;
+        return new TransmitResult()
+        {
+          IsSuccess = ex.IsSuccess,
+          Error = ex.Error,
+        };
+      }
+      catch (IncorrectPhoneNumberException ex)
+      {
+        return new TransmitResult()
+        {
+          IsSuccess = false,
+          Error = new Error(ex.Message, ErrorCode.IncorrectPhoneNumberError),
+        };
       }
       catch (Exception ex)
       {
-        throw new MessageDeliveryException(
-          $"Произошла непредвиденная ошибка при отправке сообщения: {_pluginType} {message.Id}.", ex);
+        return new TransmitResult()
+        {
+          IsSuccess = false,
+          Error = new Error(ex.Message, ex.StackTrace),
+        };
       }
     }
 
@@ -164,7 +161,7 @@ namespace ExampleTransport
     /// <remarks>
     /// Значение <c>null</c> означает "без ограничений"
     /// </remarks>
-    public int? GetTrySendCount() => default;
+    public int? GetTrySendCount() => _proxyOptions.MaxTransmitRetryCount;
 
     /// <summary>
     /// Выполняет проверку здоровья.
@@ -186,11 +183,13 @@ namespace ExampleTransport
     /// </summary>
     /// <param name="message">Модель данных сообщения.</param>
     /// <returns>Текст сообщения.</returns>
-    private string GetMessageText(Message message)
+    private static string GetMessageText(Message message)
     {
       if (string.IsNullOrWhiteSpace(message.Title) && string.IsNullOrWhiteSpace(message.Content))
       {
-        throw new IncorrectMessageDataException($"Не задан ни заголовок, ни содержимое сообщения: {_pluginType} {message.Id}.");
+        throw new PluginAppException(new Error(
+          "Не задан ни заголовок, ни содержимое сообщения.",
+          ErrorCode.IncorrectMessageDataError));
       }
 
       return string.IsNullOrWhiteSpace(message.Content)
@@ -202,21 +201,22 @@ namespace ExampleTransport
     /// Проверяет, что реквизит получателя действительно задает и содержит номер телефона.
     /// </summary>
     /// <param name="message">Модель данных сообщения.</param>
-    /// <exception cref="InvalidCredentialTypeException">Неверный тип реквизита получателя.</exception>
-    /// <exception cref="IncorrectMessageDataException">Сообщение не содержит информацию о номере телефона.</exception>
     private void CheckIdentityCredential(Message message)
     {
       var identityCredentialType = message.Identity.CredentialType;
 
       if (!_phoneNumberUtilities.IsPhoneCredentialType(identityCredentialType))
       {
-        throw new InvalidCredentialTypeException(identityCredentialType, _pluginType, message.Id);
+        throw new PluginAppException(new Error(
+          $"Тип реквизита получателя '{identityCredentialType}' в сообщении {message.Id} является некорректным для плагина {_pluginType}.",
+          ErrorCode.InvalidCredentialTypeError));
       }
 
       if (string.IsNullOrWhiteSpace(message.Identity.CredentialValue))
       {
-        throw new IncorrectMessageDataException(
-          $"Сообщение не содержит информацию о номере телефона: {_pluginType} {message.Id}.");
+        throw new PluginAppException(new Error(
+          "Сообщение не содержит информацию о номере телефона.",
+          ErrorCode.IncorrectMessageDataError));
       }
     }
 
@@ -228,13 +228,13 @@ namespace ExampleTransport
     /// <returns>Модель запроса.</returns>
     private HttpRequestMessage PrepareHttpRequestMessage(string messageText, string phoneNumber)
     {
-      var body = new MessageInfo
+      var body = new Request
       {
         PhoneNumber = phoneNumber,
         Content = messageText,
         Sender = _proxyOptions.Sender,
       };
-      var jsonData = JsonConvert.SerializeObject(body);
+      var jsonData = JsonSerializer.Serialize(body);
       var httpContent = new StringContent(jsonData, Encoding.UTF8, Application.Json);
       var authenticationString = $"{_proxyOptions.Username}:{_proxyOptions.Password}";
       var base64EncodedAuthenticationString = Convert.ToBase64String(Encoding.UTF8.GetBytes(authenticationString));
@@ -250,15 +250,50 @@ namespace ExampleTransport
     }
 
     /// <summary>
-    /// Определяет квота какого приоритета будет израсходована при попытки отправить сообщения с данным приоритетом.
+    /// Обрабатывает ошибки отправки сообщения.
     /// </summary>
-    /// <param name="messagePriority">Приоритет отправляемого сообщения</param>
-    /// <returns>Приоритет, чью квоту следует расходовать.</returns>
-    /// <exception cref="PriorityLimitException">Ошибка из-за достижения лимита сообщений.</exception>
-    /// <exception cref="TransportPendingException">Ошибка ожидания транспорта.</exception>
-    private MessagePriority ChooseQuotaPriority(MessagePriority messagePriority)
+    /// <param name="message">Сообщение.</param>
+    /// <param name="httpResponse">Ответ на отправку сообщения.</param>
+    private async Task HandleResponseAsync(Message message, HttpResponseMessage httpResponse)
     {
-      return messagePriority;
+      var responseBody = await httpResponse?.Content?.ReadAsStringAsync();
+      var response = JsonSerializer.Deserialize<Response>(responseBody);
+
+      if (httpResponse?.StatusCode != HttpStatusCode.OK
+        || !(response?.Id > 0))
+      {
+        responseBody = responseBody[..499] + (responseBody.Length > 500 ? "..." : default);
+        throw (httpResponse?.StatusCode ?? default) switch
+        {
+          HttpStatusCode.ServiceUnavailable => new PluginAppException(new Error(
+            $"Ошибка ожидания транспорта {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.TransportPendingError)),
+          HttpStatusCode.TooManyRequests => new PluginAppException(new Error(
+            $"Ошибка ожидания транспорта {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.TransportPendingError)),
+          HttpStatusCode.InternalServerError => new PluginAppException(new Error(
+            $"Не удалось отправить сообщение {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.MessageTransmitError)),
+          HttpStatusCode.BadRequest => new PluginAppException(new Error(
+            $"Ошибка в реквизитах сообщения {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.IncorrectMessageDataError)),
+          HttpStatusCode.NotAcceptable => new PluginAppException(new Error(
+            $"Ошибка в реквизитах сообщения {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.IncorrectMessageDataError)),
+          HttpStatusCode.Unauthorized => new PluginAppException(new Error(
+            $"Ошибка авторизации транспорта {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.TransportAuthorizeError)),
+          HttpStatusCode.Forbidden => new PluginAppException(new Error(
+            $"Ошибка авторизации транспорта {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.TransportAuthorizeError)),
+          HttpStatusCode.OK => new PluginAppException(new Error(
+            $"Не удалось отправить сообщение т.к. пришел неожиданный ответ {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.MessageDeliveryError)),
+          _ => new PluginAppException(new Error(
+            $"Ошибка во время доставки сообщения {_pluginType} {responseBody}. ID сообщения: {message.Id}.",
+            ErrorCode.MessageDeliveryError)),
+        };
+      }
     }
   }
 }

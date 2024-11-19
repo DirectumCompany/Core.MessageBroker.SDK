@@ -5,7 +5,7 @@ namespace ExampleTransport.Models
   /// <summary>
   /// Сообщение.
   /// </summary>
-  internal class MessageInfo
+  internal class Request
   {
     /// <summary>
     /// Отправитель сообщения.
