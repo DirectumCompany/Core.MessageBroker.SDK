@@ -193,7 +193,7 @@ namespace ExampleTransport
       if (!_phoneNumberUtilities.IsPhoneCredentialType(identityCredentialType))
       {
         throw new PluginAppException(new Error(
-          $"Credential type '{identityCredentialType}' in {message.Id} message is invalid for {_pluginType} proxy.",
+          $"Тип реквизита получателя '{identityCredentialType}' в сообщении {message.Id} является некорректным для плагина {_pluginType}.",
           ErrorCode.InvalidCredentialTypeError));
       }
 
