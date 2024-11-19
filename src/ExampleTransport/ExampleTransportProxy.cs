@@ -110,19 +110,34 @@ namespace ExampleTransport
         using var httpResponse = await client.SendAsync(request);
         await HandleResponseAsync(message, httpResponse);
 
-        return new TransmitResult();
+        return new TransmitResult()
+        {
+          IsSuccess = true,
+        };
       }
       catch (PluginAppException ex)
       {
-        return new TransmitResult(ex.Error, ex.IsSuccess);
+        return new TransmitResult()
+        {
+          IsSuccess = ex.IsSuccess,
+          Error = ex.Error,
+        };
       }
       catch (IncorrectPhoneNumberException ex)
       {
-        return new TransmitResult(new Error(ex.Message, ErrorCode.IncorrectPhoneNumberError));
+        return new TransmitResult()
+        {
+          IsSuccess = false,
+          Error = new Error(ex.Message, ErrorCode.IncorrectPhoneNumberError),
+        };
       }
       catch (Exception ex)
       {
-        return new TransmitResult(new Error(ex.Message, ex.StackTrace));
+        return new TransmitResult()
+        {
+          IsSuccess = false,
+          Error = new Error(ex.Message, ex.StackTrace),
+        };
       }
     }
 
