@@ -45,11 +45,6 @@ namespace ExampleTransport
     private readonly IPhoneNumberUtilities _phoneNumberUtilities;
 
     /// <summary>
-    /// Логгер.
-    /// </summary>
-    private readonly ILogger _logger;
-
-    /// <summary>
     /// Системные часы.
     /// </summary>
     private readonly ISystemClock _systemClock;
@@ -64,15 +59,13 @@ namespace ExampleTransport
     /// </summary>
     /// <param name="configurationService">Сервис получения конфигурации плагина.</param>
     /// <param name="phoneNumberUtilities">Утилиты для номера телефона.</param>
-    /// <param name="loggerFactory">Фабрика логов.</param>
     /// <param name="systemClock">Системные часы.</param>
     /// <param name="httpClientFactory">Фабрика HTTP клиентов.</param>
     public ExampleTransportProxy(
       IConfigurationService configurationService,
       IPhoneNumberUtilities phoneNumberUtilities,
-      ILoggerFactory loggerFactory,
       ISystemClock systemClock,
-      IHttpClientFactory httpClientFactory = null)
+      IHttpClientFactory httpClientFactory)
     {
       _proxyOptions = configurationService.Get<Configuration>();
 
@@ -81,7 +74,6 @@ namespace ExampleTransport
         new ConfigurationValidator(),
         $"Transport:Proxies:{_pluginType}");
 
-      _logger = loggerFactory.CreateLogger(_pluginType);
       _systemClock = systemClock;
       _phoneNumberUtilities = phoneNumberUtilities;
 
