@@ -1,4 +1,3 @@
-using System.Net.Http;
 using Core.MessageBroker.Transport;
 using Core.MessageBroker.Transport.Plugin;
 using Core.MessageBroker.Transport.Utils;
@@ -43,12 +42,6 @@ namespace ExampleTransport.Plugin
     private readonly IPrioritiesUtility _prioritiesUtility;
 
     /// <summary>
-    /// Фабрика HTTP клиентов.
-    /// </summary>
-    [BootstrapperService(ServiceType = typeof(IHttpClientFactory), ProxyType = typeof(HttpClientFactoryProxy))]
-    private readonly IHttpClientFactory _httpClientFactory;
-
-    /// <summary>
     /// Расширяет список сервисов, доступных для плагина из DI.
     /// </summary>
     /// <param name="services">Коллекция сервисов.</param>
@@ -56,11 +49,11 @@ namespace ExampleTransport.Plugin
     public IServiceCollection Bootstrap(IServiceCollection services)
     {
       return services
+        .AddHttpClient()
         .AddSingleton(_configurationService)
         .AddSingleton(_phoneNumberUtilities)
         .AddSingleton(_systemClock)
         .AddSingleton(_prioritiesUtility)
-        .AddSingleton(_httpClientFactory)
         .AddTransient<IMessageTransportProxy, ExampleTransportProxy>();
     }
   }

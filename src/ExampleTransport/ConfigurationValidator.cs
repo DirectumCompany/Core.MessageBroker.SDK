@@ -15,7 +15,7 @@ namespace ExampleTransport
     {
       RuleFor(cfg => cfg)
         .NotNull()
-        .WithName("Configuration")
+        .WithMessage("конфигурация плагина должна быть заполнена.")
         .DependentRules(() =>
         {
           RuleFor(cfg => cfg.Host)
