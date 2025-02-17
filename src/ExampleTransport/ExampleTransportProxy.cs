@@ -12,7 +12,6 @@ using Core.MessageBroker.Transport.Models;
 using Core.MessageBroker.Transport.Plugin;
 using Core.MessageBroker.Transport.Utils;
 using ExampleTransport.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Polly;
 using static System.Net.Mime.MediaTypeNames;
@@ -249,10 +248,18 @@ namespace ExampleTransport
     private async Task HandleResponseAsync(Message message, HttpResponseMessage httpResponse)
     {
       var responseBody = await httpResponse?.Content?.ReadAsStringAsync();
-      var response = JsonSerializer.Deserialize<Response>(responseBody);
+      try
+      {
+        _ = JsonSerializer.Deserialize<Response>(responseBody);
+      }
+      catch (Exception ex)
+      {
+        throw new PluginAppException(new Error(
+          $"Пришел неожиданный ответ. Не удалось десериализовать ответ {_pluginType}: {ex.Message}. ID сообщения: {message.Id}",
+          ErrorCode.MessageDeliveryError));
+      }
 
-      if (httpResponse?.StatusCode != HttpStatusCode.OK
-        || !(response?.Id > 0))
+      if (httpResponse?.StatusCode != HttpStatusCode.OK)
       {
         responseBody = responseBody[..499] + (responseBody.Length > 500 ? "..." : default);
         throw (httpResponse?.StatusCode ?? default) switch
