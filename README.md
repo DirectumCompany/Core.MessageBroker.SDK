@@ -201,8 +201,10 @@
 
 ### Windows
 
-1. Скопируйте Nuget-пакет проекта в папку с плагинами сервиса сообщений. Папка указана в конфигурационном файле планировщика заданий в параметре `PluginsPath`. Путь до конфигурационного файла: `C:\inetpub\wwwroot\CoreMessageBroker\Scheduler\appsettings.json`.
-1. Укажите название плагина в конфигурационном файле планировщика заданий в параметре `<Канал доставки>DeliveryProxy`. Возможные каналы доставки: `Sms`, `Viber`, `Smtp`.
+1. Скопируйте Nuget-пакет проекта в папку с плагинами сервиса сообщений.
+Папка указана в конфигурационном файле сервиса сообщений в параметре `PluginsPath`.
+Путь до конфигурационного файла: `C:\inetpub\wwwroot\CoreMessageBroker\WebApiService\appsettings.json`.
+1. Укажите название плагина в конфигурационном файле сервиса сообщений в параметре `<Канал доставки>DeliveryProxy`. Возможные каналы доставки: `Sms`, `Viber`, `Smtp`, `Push`.
 1. Задайте разработанные ранее настройки посредника.
 
 Пример настройки для `SmsDeliveryProxy`:
@@ -226,15 +228,15 @@
 1. Добавьте собранный Nuget-пакет с плагином в образ:
    * cмонтируйте папку, в которой находится плагин;
    * переопределите `entrypoint` для копирования плагинов из `volume` в основную директорию.
-1. Укажите название плагина транспортного посредника в настройке `Transport__<Канал доставки>DeliveryProxy`. Возможные каналы доставки: `Sms`, `Viber`, `Smtp`.
+1. Укажите название плагина транспортного посредника в настройке `Transport__<Канал доставки>DeliveryProxy`. Возможные каналы доставки: `Sms`, `Viber`, `Smtp`, `Push`.
 
 Пример настройки для `SmsDeliveryProxy`:
 
 ```yml
 services:
-  message-broker-scheduler:
-    image: registry.directum.ru/hrpro/directum.message.scheduler:*.*.*.*
-    entrypoint: "sh -c 'cp /Plugins/*nupkg /app/Plugins && dotnet Core.MessageBroker.Scheduler.dll'"
+  message-broker:
+    image: registry.directum.ru/hrpro/directum.message.broker:*.*.*.*
+    entrypoint: "sh -c 'cp /Plugins/*nupkg /app/Plugins && dotnet Core.MessageBroker.WebApiService.dll'"
     environment:
       ...
       Transport__SmsDeliveryProxy: "ExampleTransportPlugin"
