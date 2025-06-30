@@ -42,6 +42,12 @@ namespace ExampleTransport.Plugin
     private readonly IPrioritiesUtility _prioritiesUtility;
 
     /// <summary>
+    /// Логгер.
+    /// </summary>
+    [BootstrapperService(ServiceType = typeof(IPluginLogger), ProxyType = typeof(PluginLoggerProxy))]
+    private readonly IPluginLogger _pluginLogger;
+
+    /// <summary>
     /// Расширяет список сервисов, доступных для плагина из DI.
     /// </summary>
     /// <param name="services">Коллекция сервисов.</param>
@@ -49,11 +55,11 @@ namespace ExampleTransport.Plugin
     public IServiceCollection Bootstrap(IServiceCollection services)
     {
       return services
-        .AddHttpClient()
         .AddSingleton(_configurationService)
         .AddSingleton(_phoneNumberUtilities)
         .AddSingleton(_systemClock)
         .AddSingleton(_prioritiesUtility)
+        .AddSingleton(_pluginLogger)
         .AddTransient<IMessageTransportProxy, ExampleTransportProxy>();
     }
   }

@@ -5,12 +5,12 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Core.MessageBroker.ConfigurationValidation;
 using Core.MessageBroker.Transport;
 using Core.MessageBroker.Transport.Exceptions;
 using Core.MessageBroker.Transport.Models;
 using Core.MessageBroker.Transport.Plugin;
 using Core.MessageBroker.Transport.Utils;
+using Core.MessageBroker.Utilities;
 using ExampleTransport.Models;
 using Microsoft.Net.Http.Headers;
 using Polly;
@@ -39,6 +39,11 @@ namespace ExampleTransport
     private readonly Configuration _proxyOptions;
 
     /// <summary>
+    /// Логгер.
+    /// </summary>
+    private readonly IPluginLogger _logger;
+
+    /// <summary>
     /// Утилиты для номера телефона.
     /// </summary>
     private readonly IPhoneNumberUtilities _phoneNumberUtilities;
@@ -56,16 +61,19 @@ namespace ExampleTransport
     /// <summary>
     /// Инициализирует прокси-сервис провайдера отправки сообщений.
     /// </summary>
+    /// <param name="logger">Логгер.</param>
     /// <param name="configurationService">Сервис получения конфигурации плагина.</param>
     /// <param name="phoneNumberUtilities">Утилиты для номера телефона.</param>
     /// <param name="systemClock">Системные часы.</param>
     /// <param name="httpClientFactory">Фабрика HTTP клиентов.</param>
     public ExampleTransportProxy(
+      IPluginLogger logger,
       IConfigurationService configurationService,
       IPhoneNumberUtilities phoneNumberUtilities,
       ISystemClock systemClock,
       IHttpClientFactory httpClientFactory)
     {
+      _logger = logger;
       _proxyOptions = configurationService.Get<Configuration>();
 
       SettingsValidator<Configuration>.Validate(
@@ -93,6 +101,8 @@ namespace ExampleTransport
     {
       try
       {
+        _logger.LogDebug(LogHelper.GetStartMessage(message?.Id));
+
         CheckIdentityCredential(message);
         var messageText = GetMessageText(message);
         var phoneNumber = _phoneNumberUtilities.Normalize(message.Identity.CredentialValue);
@@ -108,6 +118,8 @@ namespace ExampleTransport
       }
       catch (PluginAppException ex)
       {
+        _logger.LogError(LogHelper.GetErrorMessage(message?.Id, ex));
+
         return new TransmitResult()
         {
           IsSuccess = ex.IsSuccess,
@@ -116,6 +128,8 @@ namespace ExampleTransport
       }
       catch (IncorrectPhoneNumberException ex)
       {
+        _logger.LogError(LogHelper.GetErrorMessage(message?.Id, ex));
+
         return new TransmitResult()
         {
           IsSuccess = false,
@@ -124,6 +138,8 @@ namespace ExampleTransport
       }
       catch (Exception ex)
       {
+        _logger.LogError(LogHelper.GetErrorMessage(message?.Id, ex));
+
         return new TransmitResult()
         {
           IsSuccess = false,
@@ -166,6 +182,8 @@ namespace ExampleTransport
     /// </remarks>
     public async Task<HealthCheckResult> HealthCheck()
     {
+      _logger.LogDebug(LogHelper.HealthCheckStartMessage);
+
       return await Task.FromResult(HealthCheckResult.Healthy());
     }
 
