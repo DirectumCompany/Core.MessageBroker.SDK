@@ -1,5 +1,5 @@
-using Core.MessageBroker.Transport.Logger;
 using Core.MessageBroker.Transport.Models;
+using Core.MessageBroker.Utilities.Logger;
 
 namespace ExampleTransport
 {
