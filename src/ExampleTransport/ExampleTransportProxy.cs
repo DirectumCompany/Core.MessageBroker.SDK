@@ -120,7 +120,7 @@ namespace ExampleTransport
       }
       catch (PluginAppException ex)
       {
-        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.ToString());
+        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.Message);
 
         return new TransmitResult()
         {
@@ -130,7 +130,7 @@ namespace ExampleTransport
       }
       catch (IncorrectPhoneNumberException ex)
       {
-        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.ToString());
+        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.Message);
 
         return new TransmitResult()
         {
@@ -140,7 +140,7 @@ namespace ExampleTransport
       }
       catch (Exception ex)
       {
-        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.ToString());
+        _logger.LogWarning(LogHelper.ExceptionMessageTemplate, message?.Id, ex.Message, ex.StackTrace);
 
         return new TransmitResult()
         {
@@ -196,7 +196,7 @@ namespace ExampleTransport
       }
       catch (Exception ex)
       {
-        _logger.LogError(LogHelper.HealthCheckErrorTemplate, ex.ToString());
+        _logger.LogError(LogHelper.HealthCheckExceptionTemplate, ex.Message, ex.StackTrace);
 
         return HealthCheckResult.Unhealthy(ex.Message);
       }
