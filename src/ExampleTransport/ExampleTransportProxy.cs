@@ -101,7 +101,7 @@ namespace ExampleTransport
     {
       try
       {
-        _logger.LogDebug(LogHelper.GetStartMessage(message?.Id));
+        _logger.LogDebug(LogHelper.StartMessageTemplate, message?.Id);
 
         CheckIdentityCredential(message);
         var messageText = GetMessageText(message);
@@ -111,16 +111,18 @@ namespace ExampleTransport
         using var httpResponse = await client.SendAsync(request);
         await HandleResponseAsync(message, httpResponse);
 
-        return new TransmitResult()
+        _logger.LogDebug(LogHelper.EndMessageTemplate, message.Id);
+
+        return new TransmitResult
         {
           IsSuccess = true,
         };
       }
       catch (PluginAppException ex)
       {
-        _logger.LogError(LogHelper.GetErrorMessage(message?.Id, ex));
+        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.Message);
 
-        return new TransmitResult()
+        return new TransmitResult
         {
           IsSuccess = ex.IsSuccess,
           Error = ex.Error,
@@ -128,9 +130,9 @@ namespace ExampleTransport
       }
       catch (IncorrectPhoneNumberException ex)
       {
-        _logger.LogError(LogHelper.GetErrorMessage(message?.Id, ex));
+        _logger.LogWarning(LogHelper.ErrorMessageTemplate, message?.Id, ex.Message);
 
-        return new TransmitResult()
+        return new TransmitResult
         {
           IsSuccess = false,
           Error = new Error(ex.Message, ErrorCode.IncorrectPhoneNumberError),
@@ -138,9 +140,9 @@ namespace ExampleTransport
       }
       catch (Exception ex)
       {
-        _logger.LogError(LogHelper.GetErrorMessage(message?.Id, ex));
+        _logger.LogWarning(LogHelper.ExceptionMessageTemplate, message?.Id, ex.Message, ex.StackTrace);
 
-        return new TransmitResult()
+        return new TransmitResult
         {
           IsSuccess = false,
           Error = new Error(ex.Message, ex.StackTrace),
@@ -182,9 +184,22 @@ namespace ExampleTransport
     /// </remarks>
     public async Task<HealthCheckResult> HealthCheck()
     {
-      _logger.LogDebug(LogHelper.HealthCheckStartMessage);
+      try
+      {
+        _logger.LogDebug(LogHelper.HealthCheckStartMessage);
 
-      return await Task.FromResult(HealthCheckResult.Healthy());
+        var result = await Task.FromResult(HealthCheckResult.Healthy());
+
+        _logger.LogDebug(LogHelper.HealthCheckEndMessage);
+
+        return result;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(LogHelper.HealthCheckExceptionTemplate, ex.Message, ex.StackTrace);
+
+        return HealthCheckResult.Unhealthy(ex.Message);
+      }
     }
 
     /// <summary>
