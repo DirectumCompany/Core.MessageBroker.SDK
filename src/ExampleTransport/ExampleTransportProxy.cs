@@ -115,7 +115,7 @@ namespace ExampleTransport
 
         return new TransmitResult
         {
-          IsSuccess = true,
+          Status = TransmitStatus.Delivered,
         };
       }
       catch (PluginAppException ex)
@@ -124,7 +124,7 @@ namespace ExampleTransport
 
         return new TransmitResult
         {
-          IsSuccess = ex.IsSuccess,
+          Status = TransmitStatus.Failed,
           Error = ex.Error,
         };
       }
@@ -134,7 +134,7 @@ namespace ExampleTransport
 
         return new TransmitResult
         {
-          IsSuccess = false,
+          Status = TransmitStatus.Failed,
           Error = new Error(ex.Message, ErrorCode.IncorrectPhoneNumberError),
         };
       }
@@ -144,7 +144,7 @@ namespace ExampleTransport
 
         return new TransmitResult
         {
-          IsSuccess = false,
+          Status = TransmitStatus.Failed,
           Error = new Error(ex.Message, ex.StackTrace),
         };
       }
